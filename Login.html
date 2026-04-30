@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Audit System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h2>Login Form</h2>
+
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+
+    <button onclick="login()">Login</button>
+    <button onclick="clearLogs()">Clear Logs</button>
+ 
+    <div id="logArea"></div>
+    <script>
+        // Step 3: Define valid users
+        const validUsers = {
+            "admin": "1234",
+            "user": "pass"
+        };
+
+        // Step 4: Track failed login attempts
+        let failedAttempts = {};
+
+        // Step 5: Timestamp function
+        function getTimestamp() {
+            return new Date().toISOString();
+        }
+
+        // Step 6: Log function
+        function addLog(level, message) {
+            const logArea = document.getElementById("logArea");
+            const logEntry = document.createElement("div");
+            const timestamp = getTimestamp();
+            logEntry.innerHTML = `[${timestamp}] <strong>${level}</strong>: ${message}`;
+            logArea.appendChild(logEntry);
+        }
+
+        // Step 7: Define suspicious input patterns
+        const suspiciousPatterns = [
+            "<script>",
+            "--",
+            "'",
+            '"',
+            ";",
+            "OR 1=1",
+            "DROP"
+        ];
+
+        // Step 8: Function to detect suspicious input
+        function containsSuspiciousInput(input) {
+            const upperInput = input.toUpperCase();
+            for (let pattern of suspiciousPatterns) {
+                if (upperInput.includes(pattern.toUpperCase())) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Step 9: Login function
+        function login() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+
+            // Check if fields are empty
+            if (username === "" || password === "") {
+                addLog("WARNING", "Empty username or password field");
+                return;
+            }
+
+            // Check for suspicious input
+            if (containsSuspiciousInput(username) || containsSuspiciousInput(password)) {
+                addLog("ALERT", `Suspicious input detected - Username: "${username}"`);
+                return;
+            }
+
+            // Validate credentials
+            if (validUsers[username] && validUsers[username] === password) {
+                addLog("INFO", `Successful login for user: ${username}`);
+                // Reset failed attempts on successful login
+                failedAttempts[username] = 0;
+            } else {
+                // Initialize or increment failed attempts
+                if (!failedAttempts[username]) {
+                    failedAttempts[username] = 0;
+                }
+                failedAttempts[username]++;
+
+                addLog("WARNING", `Failed login attempt for user: ${username}`);
+
+                // Alert if 3 or more failed attempts
+                if (failedAttempts[username] >= 3) {
+                    addLog("ALERT", `Multiple failed login attempts detected for user: ${username} (${failedAttempts[username]} attempts)`);
+                }
+            }
+        }
+
+        // Step 10: Clear log function
+        function clearLogs() {
+            const logArea = document.getElementById("logArea");
+            logArea.innerHTML = "";
+            addLog("INFO", "System log cleared");
+        }
+    </script>
+</body>
+</html>
